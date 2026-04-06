@@ -19,6 +19,8 @@ HAL_StatusTypeDef can_setup(myCAN_t * myCAN, FDCAN_HandleTypeDef * can_handler)
 	if(can_ptr_array_idx >= CAN_ARR_NUM)
 		return HAL_ERROR;
 
+	memset(myCAN, 0, sizeof(myCAN_t));
+
 	myCAN->_phfdcan = can_handler;
 
 	myCAN->can_array_idx = can_ptr_array_idx;
@@ -65,14 +67,16 @@ HAL_StatusTypeDef can_send(myCAN_t * myCAN, uint8_t *payload, uint8_t payload_le
 	if(payload_length > FDCAN_DLC_BYTES_8)
 		return HAL_ERROR;
 
-
 	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.Identifier = node_id;
 	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.IdType = FDCAN_STANDARD_ID;
-	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.DataLength = get_fdcan_dlc(payload_length);
 	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.TxFrameType = is_request ? FDCAN_REMOTE_FRAME : FDCAN_DATA_FRAME;
-	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.FDFormat = FDCAN_CLASSIC_CAN;
+	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.DataLength = (uint32_t)payload_length;
+	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
 	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.BitRateSwitch = FDCAN_BRS_OFF;
-	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.TxEventFifoControl = FDCAN_STORE_TX_EVENTS;
+	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.FDFormat = FDCAN_CLASSIC_CAN;
+	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.MessageMarker = 0;		//MessageMarker is a user-defined tag (0–255) that you attach to a TX message.
+	
 
 	memcpy(&myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_data, payload, payload_length);
 
@@ -80,8 +84,7 @@ HAL_StatusTypeDef can_send(myCAN_t * myCAN, uint8_t *payload, uint8_t payload_le
 						&(myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header),
 						myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_data);
 
-	myCAN->tx_buffer_idx++;
-	myCAN->tx_buffer_idx %= CAN_TX_BUFFER_SIZE;
+	myCAN->tx_buffer_idx = (myCAN->tx_buffer_idx + 1) % CAN_TX_BUFFER_SIZE;
 
 	return ret_value;
 }
@@ -148,27 +151,6 @@ size_t can_get_from_rbbuffer(myCAN_t * myCAN, can_rx_packet* new_packet)
 {
     return lwrb_read(&myCAN->_rx_lwrb, new_packet, sizeof(can_rx_packet));
 }
-
-
-static inline uint32_t get_fdcan_dlc(uint8_t length)
-{
-    switch(length) {
-        case 0: return FDCAN_DLC_BYTES_0;
-        case 1: return FDCAN_DLC_BYTES_1;
-        case 2: return FDCAN_DLC_BYTES_2;
-        case 3: return FDCAN_DLC_BYTES_3;
-        case 4: return FDCAN_DLC_BYTES_4;
-        case 5: return FDCAN_DLC_BYTES_5;
-        case 6: return FDCAN_DLC_BYTES_6;
-        case 7: return FDCAN_DLC_BYTES_7;
-        case 8: return FDCAN_DLC_BYTES_8;
-        default: return FDCAN_DLC_BYTES_8;
-    }
-}
-
-
-
-
 
 
 

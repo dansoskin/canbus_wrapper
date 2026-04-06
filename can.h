@@ -12,7 +12,7 @@
 #include <string.h>
 #include "lwrb.h"
 
-#define CAN_RX_BUFFER_SIZE (8 * sizeof(can_rx_packet)) // set the buffer size as the size of 8 CAN packets
+#define CAN_RX_BUFFER_SIZE (8 * sizeof(can_rx_packet) + 1) // set the buffer size as the size of 8 CAN packets
 #define CAN_TX_BUFFER_SIZE 10// set the buffer size as the size of 10 CAN packets
 
 typedef struct __attribute__((packed))
@@ -22,7 +22,7 @@ typedef struct __attribute__((packed))
 }can_rx_packet;
 
 
-typedef struct __attribute__((packed))
+typedef struct 
 {
 	FDCAN_TxHeaderTypeDef _tx_header;
 	uint8_t _tx_data[8];
