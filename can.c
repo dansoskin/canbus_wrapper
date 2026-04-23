@@ -12,8 +12,6 @@ myCAN_t * can_ptr_arr[CAN_ARR_NUM] = {0};
 uint8_t can_ptr_array_idx = 0;
 volatile uint32_t msg_counter = 0;
 
-static inline uint32_t get_fdcan_dlc(uint8_t length);
-
 HAL_StatusTypeDef can_setup(myCAN_t * myCAN, FDCAN_HandleTypeDef * can_handler)
 {
 	if(can_ptr_array_idx >= CAN_ARR_NUM)
