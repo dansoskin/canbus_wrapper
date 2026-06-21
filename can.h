@@ -35,8 +35,6 @@ typedef struct
 
 	can_tx_packet _tx_buffer[CAN_TX_BUFFER_SIZE];
 	uint32_t tx_buffer_idx;
-//	FDCAN_TxHeaderTypeDef _tx_header;
-//	uint8_t _tx_data[8];
 
 	lwrb_t _rx_lwrb;
 	uint8_t _rx_buffer[CAN_RX_BUFFER_SIZE];

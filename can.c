@@ -42,6 +42,18 @@ HAL_StatusTypeDef can_setup(myCAN_t * myCAN, FDCAN_HandleTypeDef * can_handler)
 		  Error_Handler();
 		}
 
+	
+	FDCAN_TxHeaderTypeDef temp_header;
+	temp_header.IdType = FDCAN_STANDARD_ID;
+	temp_header.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+	temp_header.BitRateSwitch = FDCAN_BRS_OFF;
+	temp_header.FDFormat = FDCAN_CLASSIC_CAN;
+	temp_header.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+
+	for (uint8_t i = 0; i < CAN_TX_BUFFER_SIZE; i++)
+	{
+		myCAN->_tx_buffer[i]._tx_header = temp_header;
+	}
 
 	uint8_t rsp = lwrb_init(&myCAN->_rx_lwrb, myCAN->_rx_buffer, sizeof(myCAN->_rx_buffer));
 
@@ -66,13 +78,9 @@ HAL_StatusTypeDef can_send(myCAN_t * myCAN, uint8_t *payload, uint8_t payload_le
 		return HAL_ERROR;
 
 	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.Identifier = node_id;
-	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.IdType = FDCAN_STANDARD_ID;
 	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.TxFrameType = is_request ? FDCAN_REMOTE_FRAME : FDCAN_DATA_FRAME;
 	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.DataLength = (uint32_t)payload_length;
-	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.BitRateSwitch = FDCAN_BRS_OFF;
-	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.FDFormat = FDCAN_CLASSIC_CAN;
-	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+
 	myCAN->_tx_buffer[myCAN->tx_buffer_idx]._tx_header.MessageMarker = 0;		//MessageMarker is a user-defined tag (0–255) that you attach to a TX message.
 	
 
