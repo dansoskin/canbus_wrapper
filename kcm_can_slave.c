@@ -1,12 +1,12 @@
 /*
- * decode_can_slave.c
+ * kcm_can_slave.c
  *
- * Slave side of the decode layer. Call kcm_slave_on_can_rx() with each frame
- * drained by can_get_from_rbbuffer(); it validates the frame and hands the
- * payload to the matching weak hook.
+ * Slave side. Call kcm_slave_on_can_rx() with each frame drained by
+ * can_get_from_rbbuffer(); it validates the frame and hands the payload to
+ * the matching weak hook. The other direction is kcm_slave_send_tpdo1..4().
  */
 
-#include "decode_can_slave.h"
+#include "kcm_can_slave.h"
 
 void kcm_slave_on_can_rx(uint8_t own_node_id, uint32_t id, const uint8_t *data, uint8_t len)
 {
@@ -66,6 +66,31 @@ void kcm_slave_on_can_rx(uint8_t own_node_id, uint32_t id, const uint8_t *data, 
             break;
         default: break;
     }
+}
+
+/* ---------------------------------------------------------------------------
+ * Sending. The four differ only in the function code: 0x180/0x280/0x380/0x480
+ * plus our own node id.
+ * ------------------------------------------------------------------------ */
+
+HAL_StatusTypeDef kcm_slave_send_tpdo1(myCAN_t *myCAN, uint8_t own_node_id, const uint8_t *data, uint8_t len)
+{
+    return kcm_can_send_pdo(myCAN, CAN_FUNC_TPDO1, own_node_id, data, len);
+}
+
+HAL_StatusTypeDef kcm_slave_send_tpdo2(myCAN_t *myCAN, uint8_t own_node_id, const uint8_t *data, uint8_t len)
+{
+    return kcm_can_send_pdo(myCAN, CAN_FUNC_TPDO2, own_node_id, data, len);
+}
+
+HAL_StatusTypeDef kcm_slave_send_tpdo3(myCAN_t *myCAN, uint8_t own_node_id, const uint8_t *data, uint8_t len)
+{
+    return kcm_can_send_pdo(myCAN, CAN_FUNC_TPDO3, own_node_id, data, len);
+}
+
+HAL_StatusTypeDef kcm_slave_send_tpdo4(myCAN_t *myCAN, uint8_t own_node_id, const uint8_t *data, uint8_t len)
+{
+    return kcm_can_send_pdo(myCAN, CAN_FUNC_TPDO4, own_node_id, data, len);
 }
 
 /* ---------------------------------------------------------------------------

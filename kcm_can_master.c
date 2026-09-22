@@ -1,12 +1,12 @@
 /*
- * decode_can_master.c
+ * kcm_can_master.c
  *
- * Master side of the decode layer. Call kcm_master_on_can_rx() with each
- * frame drained by can_get_from_rbbuffer(); it validates the frame and hands
- * the payload to the matching weak hook.
+ * Master side. Call kcm_master_on_can_rx() with each frame drained by
+ * can_get_from_rbbuffer(); it validates the frame and hands the payload to
+ * the matching weak hook. The other direction is kcm_master_send_rpdo1..4().
  */
 
-#include "decode_can_master.h"
+#include "kcm_can_master.h"
 
 void kcm_master_on_can_rx(uint32_t id, const uint8_t *data, uint8_t len)
 {
@@ -40,6 +40,31 @@ void kcm_master_on_can_rx(uint32_t id, const uint8_t *data, uint8_t len)
 
         default: break;
     }
+}
+
+/* ---------------------------------------------------------------------------
+ * Sending. The four differ only in the function code: 0x200/0x300/0x400/0x500
+ * plus the destination node.
+ * ------------------------------------------------------------------------ */
+
+HAL_StatusTypeDef kcm_master_send_rpdo1(myCAN_t *myCAN, uint8_t node, const uint8_t *data, uint8_t len)
+{
+    return kcm_can_send_pdo(myCAN, CAN_FUNC_RPDO1, node, data, len);
+}
+
+HAL_StatusTypeDef kcm_master_send_rpdo2(myCAN_t *myCAN, uint8_t node, const uint8_t *data, uint8_t len)
+{
+    return kcm_can_send_pdo(myCAN, CAN_FUNC_RPDO2, node, data, len);
+}
+
+HAL_StatusTypeDef kcm_master_send_rpdo3(myCAN_t *myCAN, uint8_t node, const uint8_t *data, uint8_t len)
+{
+    return kcm_can_send_pdo(myCAN, CAN_FUNC_RPDO3, node, data, len);
+}
+
+HAL_StatusTypeDef kcm_master_send_rpdo4(myCAN_t *myCAN, uint8_t node, const uint8_t *data, uint8_t len)
+{
+    return kcm_can_send_pdo(myCAN, CAN_FUNC_RPDO4, node, data, len);
 }
 
 /* ---------------------------------------------------------------------------

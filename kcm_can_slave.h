@@ -1,15 +1,15 @@
 /*
- * decode_can_slave.h
+ * kcm_can_slave.h
  *
- * Slave side of the decode layer: the broadcast services plus whatever is
- * addressed to this node. The master side lives in decode_can_master.* and
- * the two share only decode_can.h.
+ * Slave side. What a slave receives is the broadcast services plus whatever is
+ * addressed to this node; what it sends is its own TPDOs. The master side
+ * lives in kcm_can_master.* and the two share only kcm_can.h.
  */
 
-#ifndef CAN_DECODE_CAN_SLAVE_H_
-#define CAN_DECODE_CAN_SLAVE_H_
+#ifndef KCM_CAN_SLAVE_H_
+#define KCM_CAN_SLAVE_H_
 
-#include "decode_can.h"
+#include "kcm_can.h"
 
 /*
  * \brief       dispatch one received frame to the slave hooks below
@@ -24,7 +24,7 @@
 void kcm_slave_on_can_rx(uint8_t own_node_id, uint32_t id, const uint8_t *data, uint8_t len);
 
 /*
- * Weak hooks. The defaults in decode_can_slave.c do nothing; define any of
+ * Weak hooks. The defaults in kcm_can_slave.c do nothing; define any of
  * them in the application to take it over -- no registration call, the linker
  * picks the strong definition.
  *
@@ -60,4 +60,18 @@ void kcm_slave_decode_sync(uint8_t has_counter, uint8_t counter);
  */
 void kcm_slave_decode_time(uint32_t ms_since_midnight, uint16_t days_since_1984);
 
-#endif /* CAN_DECODE_CAN_SLAVE_H_ */
+/*
+ * Sending, slave -> master. A TPDO is addressed by its SENDER, so what goes
+ * into the COB-ID is this node's own id, 1..127 -- not a destination. Every
+ * master on the bus sees it; which of them cares is their business.
+ *
+ * `data` may be NULL only when len is 0, and len is 0..8. Returns HAL_OK once
+ * the frame is queued -- see kcm_can_send_pdo in kcm_can.h for why that is
+ * not the same as transmitted.
+ */
+HAL_StatusTypeDef kcm_slave_send_tpdo1(myCAN_t *myCAN, uint8_t own_node_id, const uint8_t *data, uint8_t len);
+HAL_StatusTypeDef kcm_slave_send_tpdo2(myCAN_t *myCAN, uint8_t own_node_id, const uint8_t *data, uint8_t len);
+HAL_StatusTypeDef kcm_slave_send_tpdo3(myCAN_t *myCAN, uint8_t own_node_id, const uint8_t *data, uint8_t len);
+HAL_StatusTypeDef kcm_slave_send_tpdo4(myCAN_t *myCAN, uint8_t own_node_id, const uint8_t *data, uint8_t len);
+
+#endif /* KCM_CAN_SLAVE_H_ */

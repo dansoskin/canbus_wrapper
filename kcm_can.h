@@ -1,15 +1,15 @@
 /*
- * decode_can.h
+ * kcm_can.h
  *
- * CANopen predefined-connection-set constants, shared by the master and the
- * slave decoder. Both decode_can_master.c and decode_can_slave.c include this
- * and nothing else of each other, so the two sides can be worked on in
- * parallel without meeting in the same file. Keep this header to things BOTH
- * sides need -- anything one-sided belongs in that side's own header.
+ * CANopen predefined-connection-set constants and the one send path they
+ * share. Both kcm_can_master.c and kcm_can_slave.c include this and nothing
+ * else of each other, so the two sides can be worked on in parallel without
+ * meeting in the same file. Keep this header to things BOTH sides need --
+ * anything one-sided belongs in that side's own header.
  */
 
-#ifndef CAN_DECODE_CAN_H_
-#define CAN_DECODE_CAN_H_
+#ifndef KCM_CAN_H_
+#define KCM_CAN_H_
 
 #include "can.h"
 
@@ -60,4 +60,40 @@
 #define CAN_TIME_DLC                    6u
 #define CAN_HEARTBEAT_DLC               1u
 
-#endif /* CAN_DECODE_CAN_H_ */
+/*
+ * \brief       compose and send one PDO
+ * \param[in]   myCAN: the link to send on
+ * \param[in]   func:  CAN_FUNC_RPDO1..4 or CAN_FUNC_TPDO1..4
+ * \param[in]   node:  the node id that goes in the COB-ID, 1..127 -- the
+ *                     DESTINATION for an RPDO, the SENDER for a TPDO
+ * \param[in]   data:  payload, may be NULL only when len is 0
+ * \param[in]   len:   payload length, 0..8
+ * \return      HAL_OK, or HAL_ERROR on a bad argument or a full Tx FIFO
+ *
+ * Sending a PDO is the same operation on both sides -- only the function code
+ * and whose node id goes into it differ -- so it lives here rather than once
+ * per side.
+ *
+ * HAL_OK means QUEUED, not transmitted. A frame nobody acknowledges is
+ * retransmitted forever (Init.AutoRetransmission is ENABLE), so on a bus with
+ * no listener the three Tx buffers fill and only then does this report
+ * HAL_ERROR. Watch the stats in myCAN, not this return value, to know whether
+ * the link is alive.
+ */
+static inline HAL_StatusTypeDef kcm_can_send_pdo(myCAN_t *myCAN, uint32_t func,
+                                                 uint8_t node, const uint8_t *data,
+                                                 uint8_t len)
+{
+    if (myCAN == NULL || node == 0u || node > CAN_NODE_ID_MAX)
+        return HAL_ERROR;
+
+    if (len > 8u || (data == NULL && len > 0u))
+        return HAL_ERROR;
+
+    /* can_send copies the payload into the peripheral's Message RAM before it
+     * returns and never writes through the pointer, so dropping const here is
+     * safe -- its prototype simply predates callers that had one. */
+    return can_send(myCAN, (uint8_t *)data, len, func | node, 0u);
+}
+
+#endif /* KCM_CAN_H_ */
