@@ -49,7 +49,13 @@ void kcm_slave_on_can_rx(uint8_t own_node_id, uint32_t id, const uint8_t *data, 
     }
 
     //! --------------------------------------------------------------
-    if ((id & CAN_COB_NODE_MASK) != own_node_id) return;
+    uint8_t node = (uint8_t)(id & CAN_COB_NODE_MASK);
+
+    /* Ours, or the broadcast every slave answers to. Letting the broadcast
+     * through here cannot widen anything beyond the RPDOs below: the fixed-ID
+     * services have already returned above, and the switch holds nothing else
+     * -- a broadcast-looking TPDO or heartbeat falls out of its default. */
+    if (node != own_node_id && node != CAN_NODE_BROADCAST) return;
 
     switch (id & CAN_COB_FUNC_MASK) {
         case CAN_FUNC_RPDO1:

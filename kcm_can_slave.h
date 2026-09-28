@@ -30,6 +30,11 @@ void kcm_slave_on_can_rx(uint8_t own_node_id, uint32_t id, const uint8_t *data, 
  *
  * PDO length is mapping-dependent, so `len` is passed through as received and
  * each hook validates what it mapped.
+ *
+ * The RPDO hooks fire both for a frame addressed to this node and for one sent
+ * to CAN_NODE_BROADCAST. They are not told which it was -- if some command
+ * must only ever be obeyed when it names this node, that distinction has to be
+ * added here rather than assumed.
  */
 void kcm_slave_decode_rpdo1(const uint8_t *data, uint8_t len);
 void kcm_slave_decode_rpdo2(const uint8_t *data, uint8_t len);

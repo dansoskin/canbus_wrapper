@@ -21,6 +21,18 @@
 #define CAN_COB_ID_MAX                  0x7FFu
 #define CAN_NODE_ID_MAX                 127u
 
+/* A zero node field in an RPDO COB-ID -- 0x200, 0x300, 0x400, 0x500 -- is our
+ * broadcast: every slave accepts it, no slave owns it. CANopen has no such
+ * address (node id 0 means "all" only inside an NMT command's target byte),
+ * but those four ids collide with nothing and sit in the freely usable range,
+ * which is why this is safe to define ourselves.
+ *
+ * RPDOs ONLY, and kcm_can_send_pdo() enforces that: with any other function
+ * code a zero node field lands on a reserved id -- 0x000 is NMT, 0x080 SYNC,
+ * 0x100 TIME, and TPDO1's 0x180 falls inside the 0x101-0x180 range CiA 301
+ * lists as restricted. */
+#define CAN_NODE_BROADCAST              0u
+
 /* Function codes, node id stripped. 0x080 is shared: the bare id 0x080 is
  * SYNC, 0x080 + node is an emergency frame from that node. Whoever decodes
  * one must have ruled out the other first. */
@@ -65,7 +77,9 @@
  * \param[in]   myCAN: the link to send on
  * \param[in]   func:  CAN_FUNC_RPDO1..4 or CAN_FUNC_TPDO1..4
  * \param[in]   node:  the node id that goes in the COB-ID, 1..127 -- the
- *                     DESTINATION for an RPDO, the SENDER for a TPDO
+ *                     DESTINATION for an RPDO, the SENDER for a TPDO. For an
+ *                     RPDO it may also be CAN_NODE_BROADCAST, addressing
+ *                     every slave at once; for a TPDO that is rejected.
  * \param[in]   data:  payload, may be NULL only when len is 0
  * \param[in]   len:   payload length, 0..8
  * \return      HAL_OK, or HAL_ERROR on a bad argument or a full Tx FIFO
@@ -84,7 +98,15 @@ static inline HAL_StatusTypeDef kcm_can_send_pdo(myCAN_t *myCAN, uint32_t func,
                                                  uint8_t node, const uint8_t *data,
                                                  uint8_t len)
 {
-    if (myCAN == NULL || node == 0u || node > CAN_NODE_ID_MAX)
+    if (myCAN == NULL || node > CAN_NODE_ID_MAX)
+        return HAL_ERROR;
+
+    /* The broadcast node field is legal for an RPDO and for nothing else.
+     * Structural, not advisory: a caller cannot reach a reserved id through
+     * this function however it is called. */
+    if (node == CAN_NODE_BROADCAST &&
+        func != CAN_FUNC_RPDO1 && func != CAN_FUNC_RPDO2 &&
+        func != CAN_FUNC_RPDO3 && func != CAN_FUNC_RPDO4)
         return HAL_ERROR;
 
     if (len > 8u || (data == NULL && len > 0u))

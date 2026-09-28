@@ -46,8 +46,8 @@ void kcm_master_decode_heartbeat(uint8_t node, uint8_t state);
 
 /*
  * Sending, master -> slave. An RPDO is addressed by its DESTINATION, so `node`
- * is the slave being written to, 1..127. `data` may be NULL only when len is
- * 0, and len is 0..8.
+ * is the slave being written to, 1..127 -- or CAN_NODE_BROADCAST for one frame
+ * every slave accepts. `data` may be NULL only when len is 0, and len is 0..8.
  *
  * Returns HAL_OK once the frame is queued -- see kcm_can_send_pdo in
  * kcm_can.h for why that is not the same as transmitted.
