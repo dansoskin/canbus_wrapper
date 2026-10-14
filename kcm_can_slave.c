@@ -8,6 +8,10 @@
 
 #include "kcm_can_slave.h"
 
+/* HAL_GetTick() at the last clock sync. 0 until one arrives, so the clock
+ * reads time since boot until then. */
+static uint32_t sync_tick = 0u;
+
 void kcm_slave_on_can_rx(uint8_t own_node_id, uint32_t id, const uint8_t *data, uint8_t len)
 {
     if (own_node_id == 0u || own_node_id > CAN_NODE_ID_MAX) return;
@@ -36,7 +40,12 @@ void kcm_slave_on_can_rx(uint8_t own_node_id, uint32_t id, const uint8_t *data, 
             kcm_slave_decode_sync(len == 1u ? 1u : 0u, len == 1u ? data[0] : 0u);
             return;
 
-        case CAN_FUNC_TIME: /* 28-bit ms after midnight, then 16-bit days */
+        case CAN_FUNC_TIME: /* empty: clock sync; else 28-bit ms after midnight, then 16-bit days */
+            if (len == CAN_TIME_SYNC_DLC)
+            {
+                sync_tick = HAL_GetTick();
+                return;
+            }
             if (len != CAN_TIME_DLC) return;
             kcm_slave_decode_time(((uint32_t)data[0]) |
                                   ((uint32_t)data[1] << 8) |
@@ -72,6 +81,11 @@ void kcm_slave_on_can_rx(uint8_t own_node_id, uint32_t id, const uint8_t *data, 
             break;
         default: break;
     }
+}
+
+uint32_t kcm_slave_get_timestamp(void)
+{
+    return HAL_GetTick() - sync_tick;
 }
 
 /* ---------------------------------------------------------------------------

@@ -8,6 +8,9 @@
 
 #include "kcm_can_master.h"
 
+/* HAL_GetTick() at the last clock sync; see kcm_master_send_time_sync. */
+static uint32_t sync_tick = 0u;
+
 void kcm_master_on_can_rx(uint32_t id, const uint8_t *data, uint8_t len)
 {
     if (id > CAN_COB_ID_MAX || len > 8u || (!data && len)) return;
@@ -65,6 +68,17 @@ HAL_StatusTypeDef kcm_master_send_rpdo3(myCAN_t *myCAN, uint8_t node, const uint
 HAL_StatusTypeDef kcm_master_send_rpdo4(myCAN_t *myCAN, uint8_t node, const uint8_t *data, uint8_t len)
 {
     return kcm_can_send_pdo(myCAN, CAN_FUNC_RPDO4, node, data, len);
+}
+
+HAL_StatusTypeDef kcm_master_send_time_sync(myCAN_t *myCAN)
+{
+    sync_tick = HAL_GetTick();
+    return can_send(myCAN, NULL, CAN_TIME_SYNC_DLC, CAN_FUNC_TIME, 0u);
+}
+
+uint32_t kcm_master_get_timestamp(void)
+{
+    return HAL_GetTick() - sync_tick;
 }
 
 /* ---------------------------------------------------------------------------

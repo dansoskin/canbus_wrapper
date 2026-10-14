@@ -57,4 +57,19 @@ HAL_StatusTypeDef kcm_master_send_rpdo2(myCAN_t *myCAN, uint8_t node, const uint
 HAL_StatusTypeDef kcm_master_send_rpdo3(myCAN_t *myCAN, uint8_t node, const uint8_t *data, uint8_t len);
 HAL_StatusTypeDef kcm_master_send_rpdo4(myCAN_t *myCAN, uint8_t node, const uint8_t *data, uint8_t len);
 
+/*
+ * Clock sync. Restarts the master's timestamp at zero and broadcasts an empty
+ * TIME frame, on which every slave restarts its own, so all of them count ms
+ * from the same moment. Send it again every few seconds to keep the crystals'
+ * drift, up to a few ms a minute, from adding up.
+ *
+ * The master's clock restarts even when the frame cannot be queued; the
+ * return says whether the slaves were told.
+ */
+HAL_StatusTypeDef kcm_master_send_time_sync(myCAN_t *myCAN);
+
+/* ms since the last kcm_master_send_time_sync, or since boot before the first.
+ * Wraps after 49.7 days; compare two stamps by unsigned subtraction. */
+uint32_t kcm_master_get_timestamp(void);
+
 #endif /* KCM_CAN_MASTER_H_ */

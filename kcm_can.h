@@ -70,6 +70,10 @@
 /* Fixed payload lengths of the services that have one. */
 #define CAN_NMT_DLC                     2u
 #define CAN_TIME_DLC                    6u
+
+/* An empty TIME frame is a clock sync, not a time of day: every node restarts
+ * its timestamp at zero when it arrives. See kcm_master_send_time_sync. */
+#define CAN_TIME_SYNC_DLC               0u
 #define CAN_HEARTBEAT_DLC               1u
 
 /*

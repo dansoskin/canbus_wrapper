@@ -62,8 +62,22 @@ void kcm_slave_decode_sync(uint8_t has_counter, uint8_t counter);
 /*
  * \param[in]   ms_since_midnight: 28-bit field, already masked
  * \param[in]   days_since_1984:   days since 1 January 1984
+ *
+ * Only for a full 6-byte TIME frame. An empty one is a clock sync, handled
+ * inside the library: see kcm_slave_get_timestamp.
  */
 void kcm_slave_decode_time(uint32_t ms_since_midnight, uint16_t days_since_1984);
+
+/*
+ * \brief       this node's synced clock
+ * \return      ms since the last clock sync (an empty TIME frame), or since
+ *              boot before the first one. Wraps after 49.7 days; compare two
+ *              stamps by unsigned subtraction.
+ *
+ * The sync is stamped when kcm_slave_on_can_rx() handles it, so it is late by
+ * however long the frame waited in the receive buffer.
+ */
+uint32_t kcm_slave_get_timestamp(void);
 
 /*
  * Sending, slave -> master. A TPDO is addressed by its SENDER, so what goes
