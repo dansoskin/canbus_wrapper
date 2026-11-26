@@ -11,7 +11,18 @@
 #ifndef KCM_CAN_H_
 #define KCM_CAN_H_
 
+/* The driver layer the protocol sends through. STM32 builds get can.h next to
+ * this file, exactly as before. A platform without the STM32 FDCAN driver --
+ * the ESP32-S3 KCM Master, which reaches its MCP2518FD over SPI -- defines
+ * KCM_CAN_PORT in its build and puts its own kcm_can_port.h on the include
+ * path. That header must provide what the protocol files use from can.h and
+ * the HAL: myCAN_t, can_send(), HAL_StatusTypeDef (HAL_OK, HAL_ERROR),
+ * HAL_GetTick(), __weak and UNUSED. */
+#ifdef KCM_CAN_PORT
+#include "kcm_can_port.h"
+#else
 #include "can.h"
+#endif
 
 /* An 11-bit COB-ID splits into a 4-bit function code (bits 10..7) and a 7-bit
  * node id (bits 6..0). Node id 0 is not a valid address, which is what makes
